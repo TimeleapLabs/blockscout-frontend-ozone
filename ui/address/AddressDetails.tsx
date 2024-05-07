@@ -146,8 +146,12 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
       retryDelay: 5 * SECOND,
     });
 
-    if (query.isError || !query.data) {
+    if (query.isError) {
       throwOnResourceLoadError(query);
+    }
+
+    if (!query.data) {
+      throw new Error("No data");
     }
 
     data.creator_address_hash = query.data.from as string;
