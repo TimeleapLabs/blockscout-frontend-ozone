@@ -139,7 +139,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
       select: (tx: ViemTransaction) => {
         return tx;
       },
-      placeholderData: [{} as ViemTransaction],
+      placeholderData: {} as ViemTransaction,
       refetchOnMount: false,
       enabled: !txQuery.isPlaceholderData,
       retry: 2,
