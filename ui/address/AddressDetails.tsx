@@ -1,6 +1,7 @@
 import { Box, Text, Grid } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useQuery } from "@tanstack/react-query";
+import { Alert, AlertDescription } from "@chakra-ui/react";
 import React from "react";
 
 import throwOnResourceLoadError from "lib/errors/throwOnResourceLoadError";
@@ -108,50 +109,61 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
     return null;
   }
 
-  if (
-    data.is_contract &&
-    data.creation_tx_hash &&
-    data.creator_address_hash &&
-    data.creator_address_hash.toLowerCase() ===
-      chain.stakeManagerAddress?.toLowerCase()
-  ) {
-    // replace the creator address with the owner address
+  let err: string | undefined;
 
-    const query = useQuery<ViemTransaction, unknown, ViemTransaction>({
-      queryKey: ["RPC", "tx", { hash: data.creation_tx_hash }],
-      queryFn: async () => {
-        if (!publicClient) {
-          throw new Error("No public RPC client");
-        }
+  try {
+    if (
+      data.is_contract &&
+      data.creation_tx_hash &&
+      data.creator_address_hash &&
+      data.creator_address_hash.toLowerCase() ===
+        chain.stakeManagerAddress?.toLowerCase()
+    ) {
+      // replace the creator address with the owner address
 
-        const tx: ViemTransaction = await publicClient.getTransaction({
-          hash: data.creation_tx_hash as `0x${string}`,
-        });
+      const query = useQuery<ViemTransaction, unknown, ViemTransaction>({
+        queryKey: ["RPC", "tx", { hash: data.creation_tx_hash }],
+        queryFn: async () => {
+          if (!publicClient) {
+            throw new Error("No public RPC client");
+          }
 
-        if (!tx) {
-          throw new Error("Not found");
-        }
+          const tx: ViemTransaction = await publicClient.getTransaction({
+            hash: data.creation_tx_hash as `0x${string}`,
+          });
 
-        return tx;
-      },
-      select: (tx: ViemTransaction) => {
-        return tx;
-      },
-      placeholderData: {
-        from: data.creator_address_hash,
-      } as ViemTransaction,
-      refetchOnMount: false,
-      enabled: publicClient !== undefined,
-      retry: 2,
-      retryDelay: 5 * SECOND,
-    });
+          if (!tx) {
+            throw new Error("Not found");
+          }
 
-    data.creator_address_hash =
-      (query.data?.from as string) || data.creator_address_hash;
+          return tx;
+        },
+        select: (tx: ViemTransaction) => {
+          return tx;
+        },
+        placeholderData: {
+          from: data.creator_address_hash,
+        } as ViemTransaction,
+        refetchOnMount: false,
+        enabled: publicClient !== undefined,
+        retry: 2,
+        retryDelay: 5 * SECOND,
+      });
+
+      data.creator_address_hash =
+        (query.data?.from as string) || data.creator_address_hash;
+    }
+  } catch (error) {
+    err = (error as Error).message;
   }
 
   return (
     <>
+      {err && (
+        <Alert status="warning" width="fit-content">
+          <AlertDescription>{err}</AlertDescription>
+        </Alert>
+      )}
       {addressQuery.isDegradedData && (
         <ServiceDegradationWarning
           isLoading={addressQuery.isPlaceholderData}
