@@ -1,28 +1,53 @@
-import { Box, Text, Grid } from '@chakra-ui/react';
-import { useRouter } from 'next/router';
-import React from 'react';
+import { Box, Text, Grid } from "@chakra-ui/react";
+import { useRouter } from "next/router";
+import { useQuery } from "@tanstack/react-query";
+import React from "react";
 
-import config from 'configs/app';
-import throwOnResourceLoadError from 'lib/errors/throwOnResourceLoadError';
-import useIsMounted from 'lib/hooks/useIsMounted';
-import getQueryParamString from 'lib/router/getQueryParamString';
-import AddressCounterItem from 'ui/address/details/AddressCounterItem';
-import ServiceDegradationWarning from 'ui/shared/alerts/ServiceDegradationWarning';
-import isCustomAppError from 'ui/shared/AppError/isCustomAppError';
-import DataFetchAlert from 'ui/shared/DataFetchAlert';
-import * as DetailsInfoItem from 'ui/shared/DetailsInfoItem';
-import DetailsSponsoredItem from 'ui/shared/DetailsSponsoredItem';
-import AddressEntity from 'ui/shared/entities/address/AddressEntity';
-import BlockEntity from 'ui/shared/entities/block/BlockEntity';
-import TxEntity from 'ui/shared/entities/tx/TxEntity';
+import throwOnResourceLoadError from "lib/errors/throwOnResourceLoadError";
+import useIsMounted from "lib/hooks/useIsMounted";
+import getQueryParamString from "lib/router/getQueryParamString";
+import AddressCounterItem from "ui/address/details/AddressCounterItem";
+import ServiceDegradationWarning from "ui/shared/alerts/ServiceDegradationWarning";
+import isCustomAppError from "ui/shared/AppError/isCustomAppError";
+import DataFetchAlert from "ui/shared/DataFetchAlert";
+import * as DetailsInfoItem from "ui/shared/DetailsInfoItem";
+import DetailsSponsoredItem from "ui/shared/DetailsSponsoredItem";
+import AddressEntity from "ui/shared/entities/address/AddressEntity";
+import BlockEntity from "ui/shared/entities/block/BlockEntity";
+import TxEntity from "ui/shared/entities/tx/TxEntity";
 
-import AddressBalance from './details/AddressBalance';
-import AddressImplementations from './details/AddressImplementations';
-import AddressNameInfo from './details/AddressNameInfo';
-import AddressNetWorth from './details/AddressNetWorth';
-import TokenSelect from './tokenSelect/TokenSelect';
-import useAddressCountersQuery from './utils/useAddressCountersQuery';
-import type { AddressQuery } from './utils/useAddressQuery';
+import AddressBalance from "./details/AddressBalance";
+import AddressNameInfo from "./details/AddressNameInfo";
+import TokenSelect from "./tokenSelect/TokenSelect";
+import useAddressCountersQuery from "./utils/useAddressCountersQuery";
+import type { AddressQuery } from "./utils/useAddressQuery";
+
+import chain from "configs/app/chain";
+import useTxQuery from "ui/tx/useTxQuery";
+
+import { publicClient } from "lib/web3/client";
+import { unknownAddress } from "ui/shared/address/utils";
+import hexToDecimal from "lib/hexToDecimal";
+
+import type {
+  Chain,
+  GetBlockReturnType,
+  GetTransactionReturnType,
+  TransactionReceipt,
+  Transaction as ViemTransaction,
+} from "viem";
+import type { Transaction } from "types/api/transaction";
+
+import { SECOND } from "lib/consts";
+
+import { GET_TRANSACTION } from "stubs/RPC";
+
+type RpcResponseType = [
+  GetTransactionReturnType<Chain, "latest">,
+  TransactionReceipt | null,
+  bigint | null,
+  GetBlockReturnType<Chain, false, "latest"> | null
+];
 
 interface Props {
   addressQuery: AddressQuery;
@@ -42,38 +67,44 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
   const handleCounterItemClick = React.useCallback(() => {
     window.setTimeout(() => {
       // cannot do scroll instantly, have to wait a little
-      scrollRef?.current?.scrollIntoView({ behavior: 'smooth' });
+      scrollRef?.current?.scrollIntoView({ behavior: "smooth" });
     }, 500);
-  }, [ scrollRef ]);
+  }, [scrollRef]);
 
-  const error404Data = React.useMemo(() => ({
-    hash: addressHash || '',
-    is_contract: false,
-    implementations: null,
-    token: null,
-    watchlist_address_id: null,
-    watchlist_names: null,
-    creation_tx_hash: null,
-    block_number_balance_updated_at: null,
-    name: null,
-    exchange_rate: null,
-    coin_balance: null,
-    has_tokens: true,
-    has_token_transfers: true,
-    has_validated_blocks: false,
-  }), [ addressHash ]);
+  const error404Data = React.useMemo(
+    () => ({
+      hash: addressHash || "",
+      is_contract: false,
+      implementations: null,
+      token: null,
+      watchlist_address_id: null,
+      watchlist_names: null,
+      creation_tx_hash: null,
+      block_number_balance_updated_at: null,
+      name: null,
+      exchange_rate: null,
+      coin_balance: null,
+      has_tokens: true,
+      has_token_transfers: true,
+      has_validated_blocks: false,
+    }),
+    [addressHash]
+  );
 
   const isMounted = useIsMounted();
 
   // error handling (except 404 codes)
   if (addressQuery.isError) {
     if (isCustomAppError(addressQuery.error)) {
-      const is404Error = addressQuery.isError && 'status' in addressQuery.error && addressQuery.error.status === 404;
+      const is404Error =
+        addressQuery.isError &&
+        "status" in addressQuery.error &&
+        addressQuery.error.status === 404;
       if (!is404Error) {
         throwOnResourceLoadError(addressQuery);
       }
     } else {
-      return <DataFetchAlert/>;
+      return <DataFetchAlert />;
     }
   }
 
@@ -83,181 +114,260 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
     return null;
   }
 
+  if (data.creator_address_hash === chain.stakeManagerAddress) {
+    // replace the creator address with the owner address
+    const txQuery = useTxQuery();
+
+    const query = useQuery<RpcResponseType, unknown, Transaction | null>({
+      queryKey: ["RPC", "tx", { hash: data.creation_tx_hash }],
+      queryFn: async () => {
+        if (!publicClient) {
+          throw new Error("No public RPC client");
+        }
+
+        const tx: ViemTransaction = await publicClient.getTransaction({
+          hash: data.creation_tx_hash as `0x${string}`,
+        });
+
+        if (!tx) {
+          throw new Error("Not found");
+        }
+
+        return [tx];
+      },
+      select: (response) => {
+        const [tx] = response;
+
+        return {
+          from: { ...unknownAddress, hash: tx.from as string },
+          to: tx.to ? { ...unknownAddress, hash: tx.to as string } : null,
+          hash: tx.hash as string,
+          timestamp: null,
+          confirmation_duration: null,
+          status,
+          block: tx.blockNumber ? Number(tx.blockNumber) : null,
+          value: tx.value.toString(),
+          gas_price: null,
+          base_fee_per_gas: null,
+          max_fee_per_gas: tx.maxFeePerGas?.toString() ?? null,
+          max_priority_fee_per_gas: tx.maxPriorityFeePerGas?.toString() ?? null,
+          nonce: tx.nonce,
+          position: tx.transactionIndex,
+          type: tx.typeHex ? hexToDecimal(tx.typeHex) : null,
+          raw_input: tx.input,
+          gas_used: null,
+          gas_limit: tx.gas.toString(),
+          confirmations: 0,
+          fee: {
+            value: null,
+            type: "actual",
+          },
+          created_contract: null,
+          result: "",
+          priority_fee: null,
+          tx_burnt_fee: null,
+          revert_reason: null,
+          decoded_input: null,
+          has_error_in_internal_txs: null,
+          token_transfers: null,
+          token_transfers_overflow: false,
+          exchange_rate: null,
+          method: null,
+          tx_types: [],
+          tx_tag: null,
+          actions: [],
+        };
+      },
+      placeholderData: [GET_TRANSACTION],
+      refetchOnMount: false,
+      enabled: !txQuery.isPlaceholderData,
+      retry: 2,
+      retryDelay: 5 * SECOND,
+    });
+
+    if (query.isError || !query.data) {
+      throwOnResourceLoadError(query);
+    }
+
+    data.creator_address_hash = query.data.from.hash;
+  }
+
   return (
     <>
-      { addressQuery.isDegradedData && <ServiceDegradationWarning isLoading={ addressQuery.isPlaceholderData } mb={ 6 }/> }
+      {addressQuery.isDegradedData && (
+        <ServiceDegradationWarning
+          isLoading={addressQuery.isPlaceholderData}
+          mb={6}
+        />
+      )}
       <Grid
-        columnGap={ 8 }
+        columnGap={8}
         rowGap={{ base: 1, lg: 3 }}
-        templateColumns={{ base: 'minmax(0, 1fr)', lg: 'auto minmax(0, 1fr)' }} overflow="hidden"
+        templateColumns={{ base: "minmax(0, 1fr)", lg: "auto minmax(0, 1fr)" }}
+        overflow="hidden"
       >
-        <AddressNameInfo data={ data } isLoading={ addressQuery.isPlaceholderData }/>
-
-        { data.is_contract && data.creation_tx_hash && data.creator_address_hash && (
-          <>
-            <DetailsInfoItem.Label
+        <AddressNameInfo
+          data={data}
+          isLoading={addressQuery.isPlaceholderData}
+        />
+        {data.is_contract &&
+          data.creation_tx_hash &&
+          data.creator_address_hash && (
+            <DetailsInfoItem
+              title="Creator"
               hint="Transaction and address of creation"
-              isLoading={ addressQuery.isPlaceholderData }
+              isLoading={addressQuery.isPlaceholderData}
             >
-              Creator
-            </DetailsInfoItem.Label>
-            <DetailsInfoItem.Value>
               <AddressEntity
                 address={{ hash: data.creator_address_hash }}
                 truncation="constant"
                 noIcon
               />
               <Text whiteSpace="pre"> at txn </Text>
-              <TxEntity hash={ data.creation_tx_hash } truncation="constant" noIcon noCopy={ false }/>
-            </DetailsInfoItem.Value>
-          </>
-        ) }
-        { data.is_contract && data.implementations && data.implementations?.length > 0 && (
-          <AddressImplementations
-            data={ data.implementations }
-            isLoading={ addressQuery.isPlaceholderData }
-          />
-        ) }
-
-        <AddressBalance data={ data } isLoading={ addressQuery.isPlaceholderData }/>
-
-        { data.has_tokens && (
-          <>
-            <DetailsInfoItem.Label
-              hint="All tokens in the account and total value"
-            >
-              Tokens
-            </DetailsInfoItem.Label>
-            <DetailsInfoItem.Value py={ addressQuery.data ? 0 : undefined }>
-              { addressQuery.data ? <TokenSelect onClick={ handleCounterItemClick }/> : <Box>0</Box> }
-            </DetailsInfoItem.Value>
-          </>
-        ) }
-        { (config.features.multichainButton.isEnabled || (data.exchange_rate && data.has_tokens)) && (
-          <>
-            <DetailsInfoItem.Label
-              hint="Total net worth in USD of all tokens for the address"
-              isLoading={ addressQuery.isPlaceholderData }
-            >
-              Net worth
-            </DetailsInfoItem.Label>
-            <DetailsInfoItem.Value alignSelf="center" py={ 0 }>
-              <AddressNetWorth addressData={ addressQuery.data } addressHash={ addressHash } isLoading={ addressQuery.isPlaceholderData }/>
-            </DetailsInfoItem.Value>
-          </>
-        )
-        }
-
-        <DetailsInfoItem.Label
+              <TxEntity
+                hash={data.creation_tx_hash}
+                truncation="constant"
+                noIcon
+                noCopy={false}
+              />
+            </DetailsInfoItem>
+          )}
+        {data.is_contract && data.implementation_address && (
+          <DetailsInfoItem
+            title="Implementation"
+            hint="Implementation address of the proxy contract"
+            columnGap={1}
+          >
+            <AddressEntity
+              address={{
+                hash: data.implementation_address,
+                name: data.implementation_name,
+                is_contract: true,
+              }}
+              isLoading={addressQuery.isPlaceholderData}
+              noIcon
+            />
+          </DetailsInfoItem>
+        )}
+        <AddressBalance
+          data={data}
+          isLoading={addressQuery.isPlaceholderData}
+        />
+        {data.has_tokens && (
+          <DetailsInfoItem
+            title="Tokens"
+            hint="All tokens in the account and total value"
+            alignSelf="center"
+            py={0}
+          >
+            {addressQuery.data ? (
+              <TokenSelect onClick={handleCounterItemClick} />
+            ) : (
+              <Box py="6px">0</Box>
+            )}
+          </DetailsInfoItem>
+        )}
+        <DetailsInfoItem
+          title="Transactions"
           hint="Number of transactions related to this address"
-          isLoading={ addressQuery.isPlaceholderData || countersQuery.isPlaceholderData }
+          isLoading={
+            addressQuery.isPlaceholderData || countersQuery.isPlaceholderData
+          }
         >
-          Transactions
-        </DetailsInfoItem.Label>
-        <DetailsInfoItem.Value>
-          { addressQuery.data ? (
+          {addressQuery.data ? (
             <AddressCounterItem
               prop="transactions_count"
-              query={ countersQuery }
-              address={ data.hash }
-              onClick={ handleCounterItemClick }
-              isAddressQueryLoading={ addressQuery.isPlaceholderData }
-              isDegradedData={ addressQuery.isDegradedData }
+              query={countersQuery}
+              address={data.hash}
+              onClick={handleCounterItemClick}
+              isAddressQueryLoading={addressQuery.isPlaceholderData}
+              isDegradedData={addressQuery.isDegradedData}
             />
-          ) :
-            0 }
-        </DetailsInfoItem.Value>
-
-        { data.has_token_transfers && (
-          <>
-            <DetailsInfoItem.Label
-              hint="Number of transfers to/from this address"
-              isLoading={ addressQuery.isPlaceholderData || countersQuery.isPlaceholderData }
-            >
-              Transfers
-            </DetailsInfoItem.Label>
-            <DetailsInfoItem.Value>
-              { addressQuery.data ? (
-                <AddressCounterItem
-                  prop="token_transfers_count"
-                  query={ countersQuery }
-                  address={ data.hash }
-                  onClick={ handleCounterItemClick }
-                  isAddressQueryLoading={ addressQuery.isPlaceholderData }
-                  isDegradedData={ addressQuery.isDegradedData }
-                />
-              ) :
-                0 }
-            </DetailsInfoItem.Value>
-          </>
-        ) }
-
-        { countersQuery.data?.gas_usage_count && (
-          <>
-            <DetailsInfoItem.Label
-              hint="Gas used by the address"
-              isLoading={ addressQuery.isPlaceholderData || countersQuery.isPlaceholderData }
-            >
-              Gas used
-            </DetailsInfoItem.Label>
-            <DetailsInfoItem.Value>
-              { addressQuery.data ? (
-                <AddressCounterItem
-                  prop="gas_usage_count"
-                  query={ countersQuery }
-                  address={ data.hash }
-                  onClick={ handleCounterItemClick }
-                  isAddressQueryLoading={ addressQuery.isPlaceholderData }
-                  isDegradedData={ addressQuery.isDegradedData }
-                />
-              ) :
-                0 }
-            </DetailsInfoItem.Value>
-          </>
-        ) }
-
-        { data.has_validated_blocks && (
-          <>
-            <DetailsInfoItem.Label
-              hint="Number of blocks validated by this validator"
-              isLoading={ addressQuery.isPlaceholderData || countersQuery.isPlaceholderData }
-            >
-              Blocks validated
-            </DetailsInfoItem.Label>
-            <DetailsInfoItem.Value>
-              { addressQuery.data ? (
-                <AddressCounterItem
-                  prop="validations_count"
-                  query={ countersQuery }
-                  address={ data.hash }
-                  onClick={ handleCounterItemClick }
-                  isAddressQueryLoading={ addressQuery.isPlaceholderData }
-                  isDegradedData={ addressQuery.isDegradedData }
-                />
-              ) :
-                0 }
-            </DetailsInfoItem.Value>
-          </>
-        ) }
-
-        { data.block_number_balance_updated_at && (
-          <>
-            <DetailsInfoItem.Label
-              hint="Block number in which the address was updated"
-              isLoading={ addressQuery.isPlaceholderData }
-            >
-              Last balance update
-            </DetailsInfoItem.Label>
-            <DetailsInfoItem.Value>
-              <BlockEntity
-                number={ data.block_number_balance_updated_at }
-                isLoading={ addressQuery.isPlaceholderData }
+          ) : (
+            0
+          )}
+        </DetailsInfoItem>
+        {data.has_token_transfers && (
+          <DetailsInfoItem
+            title="Transfers"
+            hint="Number of transfers to/from this address"
+            isLoading={
+              addressQuery.isPlaceholderData || countersQuery.isPlaceholderData
+            }
+          >
+            {addressQuery.data ? (
+              <AddressCounterItem
+                prop="token_transfers_count"
+                query={countersQuery}
+                address={data.hash}
+                onClick={handleCounterItemClick}
+                isAddressQueryLoading={addressQuery.isPlaceholderData}
+                isDegradedData={addressQuery.isDegradedData}
               />
-            </DetailsInfoItem.Value>
-          </>
-        ) }
-
-        <DetailsSponsoredItem isLoading={ addressQuery.isPlaceholderData }/>
+            ) : (
+              0
+            )}
+          </DetailsInfoItem>
+        )}
+        {countersQuery.data?.gas_usage_count && (
+          <DetailsInfoItem
+            title="Gas used"
+            hint="Gas used by the address"
+            isLoading={
+              addressQuery.isPlaceholderData || countersQuery.isPlaceholderData
+            }
+          >
+            {addressQuery.data ? (
+              <AddressCounterItem
+                prop="gas_usage_count"
+                query={countersQuery}
+                address={data.hash}
+                onClick={handleCounterItemClick}
+                isAddressQueryLoading={addressQuery.isPlaceholderData}
+                isDegradedData={addressQuery.isDegradedData}
+              />
+            ) : (
+              0
+            )}
+          </DetailsInfoItem>
+        )}
+        {data.has_validated_blocks && (
+          <DetailsInfoItem
+            title="Blocks validated"
+            hint="Number of blocks validated by this validator"
+            isLoading={
+              addressQuery.isPlaceholderData || countersQuery.isPlaceholderData
+            }
+          >
+            {addressQuery.data ? (
+              <AddressCounterItem
+                prop="validations_count"
+                query={countersQuery}
+                address={data.hash}
+                onClick={handleCounterItemClick}
+                isAddressQueryLoading={addressQuery.isPlaceholderData}
+                isDegradedData={addressQuery.isDegradedData}
+              />
+            ) : (
+              0
+            )}
+          </DetailsInfoItem>
+        )}
+        {data.block_number_balance_updated_at && (
+          <DetailsInfoItem
+            title="Last balance update"
+            hint="Block number in which the address was updated"
+            alignSelf="center"
+            py={{ base: "2px", lg: 1 }}
+            isLoading={addressQuery.isPlaceholderData}
+          >
+            <BlockEntity
+              number={data.block_number_balance_updated_at}
+              isLoading={addressQuery.isPlaceholderData}
+            />
+          </DetailsInfoItem>
+        )}
+        <DetailsSponsoredItem isLoading={addressQuery.isPlaceholderData} />
       </Grid>
     </>
   );
