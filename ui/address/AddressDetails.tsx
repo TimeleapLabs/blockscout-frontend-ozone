@@ -59,13 +59,6 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
     addressQuery,
   });
 
-  const handleCounterItemClick = React.useCallback(() => {
-    window.setTimeout(() => {
-      // cannot do scroll instantly, have to wait a little
-      scrollRef?.current?.scrollIntoView({ behavior: "smooth" });
-    }, 500);
-  }, [scrollRef]);
-
   const error404Data = React.useMemo(
     () => ({
       hash: addressHash || "",
@@ -86,6 +79,52 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
     [addressHash]
   );
 
+  const data = addressQuery.isError ? error404Data : addressQuery.data;
+
+  const fetchDeployerFromTx: boolean =
+    publicClient !== undefined &&
+    data.is_contract &&
+    data.creation_tx_hash &&
+    data.creator_address_hash &&
+    data.creator_address_hash.toLowerCase() ===
+      chain.stakeManagerAddress?.toLowerCase();
+
+  const txQuery = useQuery<ViemTransaction, unknown, ViemTransaction>({
+    queryKey: ["RPC", "tx", { hash: data.creation_tx_hash }],
+    queryFn: async () => {
+      if (!publicClient) {
+        throw new Error("No public RPC client");
+      }
+
+      const tx: ViemTransaction = await publicClient.getTransaction({
+        hash: data.creation_tx_hash as `0x${string}`,
+      });
+
+      if (!tx) {
+        throw new Error("Not found");
+      }
+
+      return tx;
+    },
+    select: (tx: ViemTransaction) => {
+      return tx;
+    },
+    placeholderData: {
+      from: data.creator_address_hash,
+    } as ViemTransaction,
+    refetchOnMount: false,
+    enabled: fetchDeployerFromTx,
+    retry: 2,
+    retryDelay: 5 * SECOND,
+  });
+
+  const handleCounterItemClick = React.useCallback(() => {
+    window.setTimeout(() => {
+      // cannot do scroll instantly, have to wait a little
+      scrollRef?.current?.scrollIntoView({ behavior: "smooth" });
+    }, 500);
+  }, [scrollRef]);
+
   const isMounted = useIsMounted();
 
   // error handling (except 404 codes)
@@ -103,67 +142,16 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
     }
   }
 
-  const data = addressQuery.isError ? error404Data : addressQuery.data;
-
   if (!data || !isMounted) {
     return null;
   }
 
-  let err: string | undefined;
-
-  try {
-    if (
-      data.is_contract &&
-      data.creation_tx_hash &&
-      data.creator_address_hash &&
-      data.creator_address_hash.toLowerCase() ===
-        chain.stakeManagerAddress?.toLowerCase()
-    ) {
-      // replace the creator address with the owner address
-
-      const query = useQuery<ViemTransaction, unknown, ViemTransaction>({
-        queryKey: ["RPC", "tx", { hash: data.creation_tx_hash }],
-        queryFn: async () => {
-          if (!publicClient) {
-            throw new Error("No public RPC client");
-          }
-
-          const tx: ViemTransaction = await publicClient.getTransaction({
-            hash: data.creation_tx_hash as `0x${string}`,
-          });
-
-          if (!tx) {
-            throw new Error("Not found");
-          }
-
-          return tx;
-        },
-        select: (tx: ViemTransaction) => {
-          return tx;
-        },
-        placeholderData: {
-          from: data.creator_address_hash,
-        } as ViemTransaction,
-        refetchOnMount: false,
-        enabled: publicClient !== undefined,
-        retry: 2,
-        retryDelay: 5 * SECOND,
-      });
-
-      data.creator_address_hash =
-        (query.data?.from as string) || data.creator_address_hash;
-    }
-  } catch (error) {
-    err = (error as Error).message;
+  if (fetchDeployerFromTx) {
+    data.creator_address_hash = txQuery.data?.from as string;
   }
 
   return (
     <>
-      {err && (
-        <Alert status="warning" width="fit-content">
-          <AlertDescription>{err}</AlertDescription>
-        </Alert>
-      )}
       {addressQuery.isDegradedData && (
         <ServiceDegradationWarning
           isLoading={addressQuery.isPlaceholderData}
