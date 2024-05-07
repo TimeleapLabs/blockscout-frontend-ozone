@@ -146,10 +146,6 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
       retryDelay: 5 * SECOND,
     });
 
-    if (query.isError) {
-      throwOnResourceLoadError(query);
-    }
-
     if (!query.data) {
       throw new Error("No data");
     }
