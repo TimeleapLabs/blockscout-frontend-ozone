@@ -81,13 +81,14 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
 
   const data = addressQuery.isError ? error404Data : addressQuery.data;
 
-  const fetchDeployerFromTx: boolean =
+  const fetchDeployerFromTx: boolean = Boolean(
     publicClient !== undefined &&
-    data?.is_contract &&
-    data?.creation_tx_hash &&
-    data?.creator_address_hash &&
-    data?.creator_address_hash.toLowerCase() ===
-      chain.stakeManagerAddress?.toLowerCase();
+      data?.is_contract &&
+      data?.creation_tx_hash &&
+      data?.creator_address_hash &&
+      data?.creator_address_hash.toLowerCase() ===
+        chain.stakeManagerAddress?.toLowerCase()
+  );
 
   const txQuery = useQuery<ViemTransaction, unknown, ViemTransaction>({
     queryKey: ["RPC", "tx", { hash: data.creation_tx_hash }],
