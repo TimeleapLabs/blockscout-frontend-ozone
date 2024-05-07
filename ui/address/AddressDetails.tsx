@@ -124,7 +124,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
     // replace the creator address with the owner address
     const txQuery = useTxQuery();
 
-    const query = useQuery<ViemTransaction, unknown, Transaction | null>({
+    const query = useQuery<ViemTransaction, unknown, ViemTransaction>({
       queryKey: ["RPC", "tx", { hash: data.creation_tx_hash }],
       queryFn: async () => {
         if (!publicClient) {
@@ -142,45 +142,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
         return tx;
       },
       select: (tx: ViemTransaction) => {
-        return {
-          from: { ...unknownAddress, hash: tx.from as string },
-          to: tx.to ? { ...unknownAddress, hash: tx.to as string } : null,
-          hash: tx.hash as string,
-          timestamp: null,
-          confirmation_duration: null,
-          status,
-          block: tx.blockNumber ? Number(tx.blockNumber) : null,
-          value: tx.value.toString(),
-          gas_price: null,
-          base_fee_per_gas: null,
-          max_fee_per_gas: tx.maxFeePerGas?.toString() ?? null,
-          max_priority_fee_per_gas: tx.maxPriorityFeePerGas?.toString() ?? null,
-          nonce: tx.nonce,
-          position: tx.transactionIndex,
-          type: tx.typeHex ? hexToDecimal(tx.typeHex) : null,
-          raw_input: tx.input,
-          gas_used: null,
-          gas_limit: tx.gas.toString(),
-          confirmations: 0,
-          fee: {
-            value: null,
-            type: "actual",
-          },
-          created_contract: null,
-          result: "",
-          priority_fee: null,
-          tx_burnt_fee: null,
-          revert_reason: null,
-          decoded_input: null,
-          has_error_in_internal_txs: null,
-          token_transfers: null,
-          token_transfers_overflow: false,
-          exchange_rate: null,
-          method: null,
-          tx_types: [],
-          tx_tag: null,
-          actions: [],
-        };
+        return tx;
       },
       placeholderData: [GET_TRANSACTION],
       refetchOnMount: false,
@@ -193,7 +155,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
       throwOnResourceLoadError(query);
     }
 
-    data.creator_address_hash = query.data.from.hash;
+    data.creator_address_hash = query.data.from as string;
   }
 
   return (
