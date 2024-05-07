@@ -149,7 +149,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
     });
 
     data.creator_address_hash =
-      (query.data.from as string) || data.creator_address_hash;
+      (query.data?.from as string) || data.creator_address_hash;
   }
 
   return (
