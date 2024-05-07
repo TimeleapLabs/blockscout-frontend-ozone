@@ -81,15 +81,6 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
 
   const data = addressQuery.isError ? error404Data : addressQuery.data;
 
-  const fetchDeployerFromTx: boolean = Boolean(
-    publicClient !== undefined &&
-      data?.is_contract &&
-      data?.creation_tx_hash &&
-      data?.creator_address_hash &&
-      data?.creator_address_hash.toLowerCase() ===
-        chain.stakeManagerAddress?.toLowerCase()
-  );
-
   const txQuery = useQuery<ViemTransaction, unknown, ViemTransaction>({
     queryKey: ["RPC", "tx", { hash: data?.creation_tx_hash }],
     queryFn: async () => {
@@ -111,7 +102,13 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
       return tx;
     },
     refetchOnMount: false,
-    enabled: fetchDeployerFromTx,
+    enabled:
+      publicClient !== undefined &&
+      data?.is_contract &&
+      data?.creation_tx_hash &&
+      data?.creator_address_hash &&
+      data?.creator_address_hash.toLowerCase() ===
+        chain.stakeManagerAddress?.toLowerCase(),
     retry: 2,
     retryDelay: 5 * SECOND,
   });
@@ -144,7 +141,14 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
     return null;
   }
 
-  if (fetchDeployerFromTx) {
+  if (
+    publicClient !== undefined &&
+    data.is_contract &&
+    data.creation_tx_hash &&
+    data.creator_address_hash &&
+    data.creator_address_hash.toLowerCase() ===
+      chain.stakeManagerAddress?.toLowerCase()
+  ) {
     data.creator_address_hash = txQuery.data?.from as string;
   }
 
