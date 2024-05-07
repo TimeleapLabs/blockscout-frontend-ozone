@@ -91,14 +91,14 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
   );
 
   const txQuery = useQuery<ViemTransaction, unknown, ViemTransaction>({
-    queryKey: ["RPC", "tx", { hash: data.creation_tx_hash }],
+    queryKey: ["RPC", "tx", { hash: data?.creation_tx_hash }],
     queryFn: async () => {
       if (!publicClient) {
         throw new Error("No public RPC client");
       }
 
       const tx: ViemTransaction = await publicClient.getTransaction({
-        hash: data.creation_tx_hash as `0x${string}`,
+        hash: data?.creation_tx_hash as `0x${string}`,
       });
 
       if (!tx) {
@@ -111,7 +111,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
       return tx;
     },
     placeholderData: {
-      from: data.creator_address_hash,
+      from: data?.creator_address_hash,
     } as ViemTransaction,
     refetchOnMount: false,
     enabled: fetchDeployerFromTx,
