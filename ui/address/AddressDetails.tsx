@@ -111,7 +111,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
       return tx;
     },
     placeholderData: {
-      from: data?.creator_address_hash,
+      from: data?.creator_address_hash || "0x",
     } as ViemTransaction,
     refetchOnMount: false,
     enabled: fetchDeployerFromTx,
