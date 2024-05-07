@@ -23,7 +23,6 @@ import useAddressCountersQuery from "./utils/useAddressCountersQuery";
 import type { AddressQuery } from "./utils/useAddressQuery";
 
 import chain from "configs/app/chain";
-import useTxQuery from "ui/tx/useTxQuery";
 
 import { publicClient } from "lib/web3/client";
 
@@ -117,15 +116,10 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
       chain.stakeManagerAddress?.toLowerCase()
   ) {
     // replace the creator address with the owner address
-    const txQuery = useTxQuery();
 
     const query = useQuery<ViemTransaction, unknown, ViemTransaction>({
       queryKey: ["RPC", "tx", { hash: data.creation_tx_hash }],
       queryFn: async () => {
-        if (!publicClient) {
-          throw new Error("No public RPC client");
-        }
-
         const tx: ViemTransaction = await publicClient.getTransaction({
           hash: data.creation_tx_hash as `0x${string}`,
         });
@@ -143,7 +137,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
         from: data.creator_address_hash,
       } as ViemTransaction,
       refetchOnMount: false,
-      enabled: !txQuery.isPlaceholderData,
+      enabled: publicClient !== undefined,
       retry: 2,
       retryDelay: 5 * SECOND,
     });
