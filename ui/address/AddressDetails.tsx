@@ -124,7 +124,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
     // replace the creator address with the owner address
     const txQuery = useTxQuery();
 
-    const query = useQuery<RpcResponseType, unknown, Transaction | null>({
+    const query = useQuery<ViemTransaction, unknown, Transaction | null>({
       queryKey: ["RPC", "tx", { hash: data.creation_tx_hash }],
       queryFn: async () => {
         if (!publicClient) {
@@ -139,11 +139,9 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
           throw new Error("Not found");
         }
 
-        return [tx];
+        return tx;
       },
-      select: (response) => {
-        const [tx] = response;
-
+      select: (tx: ViemTransaction) => {
         return {
           from: { ...unknownAddress, hash: tx.from as string },
           to: tx.to ? { ...unknownAddress, hash: tx.to as string } : null,
