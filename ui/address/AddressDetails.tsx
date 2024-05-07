@@ -120,6 +120,10 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
     const query = useQuery<ViemTransaction, unknown, ViemTransaction>({
       queryKey: ["RPC", "tx", { hash: data.creation_tx_hash }],
       queryFn: async () => {
+        if (!publicClient) {
+          throw new Error("No public RPC client");
+        }
+
         const tx: ViemTransaction = await publicClient.getTransaction({
           hash: data.creation_tx_hash as `0x${string}`,
         });
