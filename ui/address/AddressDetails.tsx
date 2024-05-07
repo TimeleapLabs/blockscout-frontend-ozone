@@ -130,6 +130,8 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
           hash: data.creation_tx_hash as `0x${string}`,
         });
 
+        console.log("tx", tx);
+
         if (!tx) {
           throw new Error("Not found");
         }
@@ -139,7 +141,9 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
       select: (tx: ViemTransaction) => {
         return tx;
       },
-      placeholderData: {} as ViemTransaction,
+      placeholderData: {
+        from: data.creator_address_hash,
+      } as ViemTransaction,
       refetchOnMount: false,
       enabled: !txQuery.isPlaceholderData,
       retry: 2,
