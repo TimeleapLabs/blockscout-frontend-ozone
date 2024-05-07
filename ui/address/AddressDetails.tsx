@@ -117,6 +117,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
   if (
     data.is_contract &&
     data.creation_tx_hash &&
+    data.creator_address_hash &&
     data.creator_address_hash.toLowerCase() ===
       chain.stakeManagerAddress?.toLowerCase()
   ) {
