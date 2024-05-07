@@ -25,8 +25,6 @@ import chain from "configs/app/chain";
 import useTxQuery from "ui/tx/useTxQuery";
 
 import { publicClient } from "lib/web3/client";
-import { unknownAddress } from "ui/shared/address/utils";
-import hexToDecimal from "lib/hexToDecimal";
 
 import type {
   Chain,
@@ -35,11 +33,8 @@ import type {
   TransactionReceipt,
   Transaction as ViemTransaction,
 } from "viem";
-import type { Transaction } from "types/api/transaction";
 
 import { SECOND } from "lib/consts";
-
-import { GET_TRANSACTION } from "stubs/RPC";
 
 type RpcResponseType = [
   GetTransactionReturnType<Chain, "latest">,
@@ -144,7 +139,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
       select: (tx: ViemTransaction) => {
         return tx;
       },
-      placeholderData: [GET_TRANSACTION],
+      placeholderData: [{} as ViemTransaction],
       refetchOnMount: false,
       enabled: !txQuery.isPlaceholderData,
       retry: 2,
