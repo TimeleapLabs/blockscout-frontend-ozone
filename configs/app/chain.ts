@@ -21,7 +21,8 @@ const chain = Object.freeze({
   isTestnet: getEnvValue("NEXT_PUBLIC_IS_TESTNET") === "true",
   verificationType:
     getEnvValue("NEXT_PUBLIC_NETWORK_VERIFICATION_TYPE") || "mining",
-  stakeManagerAddress: getEnvValue("NEXT_PUBLIC_NETWORK_STAKE_MANAGER_ADDRESS"),
+  stakeManagerAddress:
+    getEnvValue("NEXT_PUBLIC_NETWORK_STAKE_MANAGER_ADDRESS") || "0x",
 });
 
 export default chain;
