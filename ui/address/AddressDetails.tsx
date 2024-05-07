@@ -102,13 +102,14 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
       return tx;
     },
     refetchOnMount: false,
-    enabled:
+    enabled: Boolean(
       publicClient !== undefined &&
-      data?.is_contract &&
-      data?.creation_tx_hash &&
-      data?.creator_address_hash &&
-      data?.creator_address_hash.toLowerCase() ===
-        chain.stakeManagerAddress?.toLowerCase(),
+        data?.is_contract &&
+        data?.creation_tx_hash &&
+        data?.creator_address_hash &&
+        data?.creator_address_hash.toLowerCase() ===
+          chain.stakeManagerAddress?.toLowerCase()
+    ),
     retry: 2,
     retryDelay: 5 * SECOND,
   });
