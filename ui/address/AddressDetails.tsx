@@ -114,7 +114,12 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
     return null;
   }
 
-  if (data.creator_address_hash === chain.stakeManagerAddress) {
+  if (
+    data.is_contract &&
+    data.creation_tx_hash &&
+    data.creator_address_hash.toLowerCase() ===
+      chain.stakeManagerAddress?.toLowerCase()
+  ) {
     // replace the creator address with the owner address
     const txQuery = useTxQuery();
 
