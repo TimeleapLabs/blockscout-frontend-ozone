@@ -122,7 +122,14 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
     ? txQuery.isPlaceholderData
     : addressQuery.isPlaceholderData;
 
-  if (isUserStakeContract && !txQuery.isPlaceholderData && txQuery.data) {
+  if (
+    data.is_contract &&
+    data.creation_tx_hash &&
+    data.creator_address_hash &&
+    isUserStakeContract &&
+    !txQuery.isPlaceholderData &&
+    txQuery.data
+  ) {
     data.creator_address_hash = txQuery.data.from.hash;
   }
 
