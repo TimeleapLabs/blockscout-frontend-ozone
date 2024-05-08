@@ -1,7 +1,5 @@
 import { Box, Text, Grid } from "@chakra-ui/react";
 import { useRouter } from "next/router";
-import { useQuery } from "@tanstack/react-query";
-import { Alert, AlertDescription } from "@chakra-ui/react";
 import React from "react";
 
 import throwOnResourceLoadError from "lib/errors/throwOnResourceLoadError";
@@ -25,24 +23,10 @@ import type { AddressQuery } from "./utils/useAddressQuery";
 
 import chain from "configs/app/chain";
 
-import { publicClient } from "lib/web3/client";
-
-import type {
-  Chain,
-  GetBlockReturnType,
-  GetTransactionReturnType,
-  TransactionReceipt,
-  Transaction as ViemTransaction,
-} from "viem";
+import useApiQuery from "lib/api/useApiQuery";
+import { TX } from "stubs/tx";
 
 import { SECOND } from "lib/consts";
-
-type RpcResponseType = [
-  GetTransactionReturnType<Chain, "latest">,
-  TransactionReceipt | null,
-  bigint | null,
-  GetBlockReturnType<Chain, false, "latest"> | null
-];
 
 interface Props {
   addressQuery: AddressQuery;
@@ -81,37 +65,21 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
 
   const data = addressQuery.isError ? error404Data : addressQuery.data;
 
-  const txQuery = useQuery<ViemTransaction, unknown, ViemTransaction>({
-    queryKey: ["RPC", "tx", { hash: data?.creation_tx_hash }],
-    queryFn: async () => {
-      if (!publicClient) {
-        throw new Error("No public RPC client");
-      }
-
-      const tx: ViemTransaction = await publicClient.getTransaction({
-        hash: data?.creation_tx_hash as `0x${string}`,
-      });
-
-      if (!tx) {
-        throw new Error("Not found");
-      }
-
-      return tx;
-    },
-    select: (tx: ViemTransaction) => {
-      return tx;
-    },
-    refetchOnMount: false,
-    enabled: Boolean(
-      publicClient !== undefined &&
+  const txQuery = useApiQuery<"tx", { status: number }>("tx", {
+    pathParams: { hash: data?.creation_tx_hash },
+    queryOptions: {
+      enabled: Boolean(
         data?.is_contract &&
-        data?.creation_tx_hash &&
-        data?.creator_address_hash &&
-        data?.creator_address_hash.toLowerCase() ===
-          chain.stakeManagerAddress?.toLowerCase()
-    ),
-    retry: 2,
-    retryDelay: 5 * SECOND,
+          data?.creation_tx_hash &&
+          data?.creator_address_hash &&
+          data?.creator_address_hash.toLowerCase() ===
+            chain.stakeManagerAddress?.toLowerCase()
+      ),
+      refetchOnMount: false,
+      placeholderData: TX,
+      retry: 2,
+      refetchInterval: 15 * SECOND,
+    },
   });
 
   const handleCounterItemClick = React.useCallback(() => {
@@ -143,14 +111,15 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
   }
 
   if (
-    publicClient !== undefined &&
     data.is_contract &&
     data.creation_tx_hash &&
     data.creator_address_hash &&
     data.creator_address_hash.toLowerCase() ===
-      chain.stakeManagerAddress?.toLowerCase()
+      chain.stakeManagerAddress?.toLowerCase() &&
+    !txQuery.isPlaceholderData &&
+    txQuery.data
   ) {
-    data.creator_address_hash = txQuery.data?.from as string;
+    data.creator_address_hash = txQuery.data.from.hash;
   }
 
   return (
