@@ -115,9 +115,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
     data.creation_tx_hash &&
     data.creator_address_hash &&
     data.creator_address_hash.toLowerCase() ===
-      chain.stakeManagerAddress?.toLowerCase() &&
-    !txQuery.isPlaceholderData &&
-    txQuery.data
+      chain.stakeManagerAddress?.toLowerCase()
   ) {
     data.creator_address_hash = txQuery.data.from.hash;
   }
@@ -146,7 +144,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
             <DetailsInfoItem
               title="Creator"
               hint="Transaction and address of creation"
-              isLoading={addressQuery.isPlaceholderData}
+              isLoading={txQuery.isPlaceholderData}
             >
               <AddressEntity
                 address={{ hash: data.creator_address_hash }}
