@@ -66,7 +66,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
   const data = addressQuery.isError ? error404Data : addressQuery.data;
 
   const txQuery = useApiQuery<"tx", { status: number }>("tx", {
-    pathParams: { hash: data?.creation_tx_hash },
+    pathParams: { hash: data?.creation_tx_hash || "0x" },
     queryOptions: {
       enabled: Boolean(
         data?.is_contract &&
