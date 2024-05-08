@@ -110,15 +110,19 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
     return null;
   }
 
-  if (
+  const isUserStakeContract = Boolean(
     data.is_contract &&
-    data.creation_tx_hash &&
-    data.creator_address_hash &&
-    data.creator_address_hash.toLowerCase() ===
-      chain.stakeManagerAddress?.toLowerCase() &&
-    !txQuery.isPlaceholderData &&
-    txQuery.data
-  ) {
+      data.creation_tx_hash &&
+      data.creator_address_hash &&
+      data.creator_address_hash.toLowerCase() ===
+        chain.stakeManagerAddress?.toLowerCase()
+  );
+
+  const isAddressQueryLoading = isUserStakeContract
+    ? txQuery.isPlaceholderData
+    : addressQuery.isPlaceholderData;
+
+  if (isUserStakeContract && !txQuery.isPlaceholderData && txQuery.data) {
     data.creator_address_hash = txQuery.data.from.hash;
   }
 
@@ -146,7 +150,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
             <DetailsInfoItem
               title="Creator"
               hint="Transaction and address of creation"
-              isLoading={txQuery.isPlaceholderData}
+              isLoading={isAddressQueryLoading}
             >
               <AddressEntity
                 isLoading={txQuery.isPlaceholderData}
