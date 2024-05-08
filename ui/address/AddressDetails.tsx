@@ -149,6 +149,7 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
               isLoading={txQuery.isPlaceholderData}
             >
               <AddressEntity
+                isLoading={txQuery.isPlaceholderData}
                 address={{ hash: data.creator_address_hash }}
                 truncation="constant"
                 noIcon
