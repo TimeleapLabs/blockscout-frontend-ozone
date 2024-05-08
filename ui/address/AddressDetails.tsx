@@ -115,7 +115,8 @@ const AddressDetails = ({ addressQuery, scrollRef }: Props) => {
     data.creation_tx_hash &&
     data.creator_address_hash &&
     data.creator_address_hash.toLowerCase() ===
-      chain.stakeManagerAddress?.toLowerCase()
+      chain.stakeManagerAddress?.toLowerCase() &&
+    txQuery.data
   ) {
     data.creator_address_hash = txQuery.data.from.hash;
   }
