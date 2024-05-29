@@ -27,7 +27,7 @@ const SORT_SEQUENCE: Record<SortField, Array<Sort | undefined>> = {
   "gas-limit": ["gas-limit-desc", "gas-limit-asc", undefined],
 };
 
-const getNextSortValue = getNextSortValueShared<SortField, Sort>.bind(
+const getNextSortValue = (getNextSortValueShared<SortField, Sort>).bind(
   undefined,
   SORT_SEQUENCE
 );
