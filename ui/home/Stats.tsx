@@ -14,8 +14,19 @@ import IconSvg from 'ui/shared/IconSvg';
 
 import StatsItem from './StatsItem';
 
+import useFetch from 'lib/hooks/useFetch';
+import chain from 'configs/app/chain';
+
 const hasAvgBlockTime = config.UI.homepage.showAvgBlockTime;
 const rollupFeature = config.features.rollup;
+
+type ChainData = {
+  staked?: string
+  users?: string
+  initialSupply?: string
+  maxSupply?: string
+  errors?: string[]
+}
 
 const Stats = () => {
   const [ hasGasTracker, setHasGasTracker ] = React.useState(config.features.gasTracker.isEnabled);
@@ -52,6 +63,15 @@ const Stats = () => {
     return null;
   }
 
+  const fetch = useFetch()
+  const [chainData, setChainData]: [ChainData, any] = React.useState<ChainData>({});
+
+  if (!chainData.errors && !chainData.staked) {
+    fetch('https://api.testnet.ozonescan.org/api/chain').then((data: ChainData) => {
+      setChainData(data);
+    });
+  }
+
   const isLoading = isPlaceholderData ||
     (rollupFeature.isEnabled && rollupFeature.type === 'zkEvm' && zkEvmLatestBatchQuery.isPlaceholderData) ||
     (rollupFeature.isEnabled && rollupFeature.type === 'zkSync' && zkSyncLatestBatchQuery.isPlaceholderData);
@@ -63,6 +83,11 @@ const Stats = () => {
   let itemsCount = 5;
   !hasGasTracker && itemsCount--;
   !hasAvgBlockTime && itemsCount--;
+
+  chainData.initialSupply && itemsCount++;
+  chainData.staked && itemsCount++;
+  chainData.users && itemsCount++;
+  chainData.maxSupply && itemsCount++;
 
   if (data) {
     !data.gas_prices && itemsCount--;
@@ -160,6 +185,42 @@ const Stats = () => {
             icon="coins/bitcoin"
             title="BTC Locked in 2WP"
             value={ `${ BigNumber(data.rootstock_locked_btc).div(WEI).dp(0).toFormat() } RBTC` }
+            _last={ isOdd ? lastItemTouchStyle : undefined }
+            isLoading={ isLoading }
+          />
+        ) }
+        { chainData.initialSupply && (
+          <StatsItem
+            icon="transactions"
+            title="Initial Supply"
+            value={ `${chainData.initialSupply} ${chain.currency.symbol}` }
+            _last={ isOdd ? lastItemTouchStyle : undefined }
+            isLoading={ isLoading }
+          />
+        ) }
+        { chainData.initialSupply && (
+          <StatsItem
+            icon="transactions"
+            title="Maximum Supply"
+            value={ `${chainData.maxSupply} ${chain.currency.symbol}` }
+            _last={ isOdd ? lastItemTouchStyle : undefined }
+            isLoading={ isLoading }
+          />
+        ) }
+        { chainData.users && (
+          <StatsItem
+            icon="wallet"
+            title="Users"
+            value={ `${chainData.users}` }
+            _last={ isOdd ? lastItemTouchStyle : undefined }
+            isLoading={ isLoading }
+          />
+        ) }
+        { chainData.users && (
+          <StatsItem
+            icon="wallet"
+            title="Total Staked"
+            value={ `${chainData.staked} ${chain.currency.symbol}` }
             _last={ isOdd ? lastItemTouchStyle : undefined }
             isLoading={ isLoading }
           />
