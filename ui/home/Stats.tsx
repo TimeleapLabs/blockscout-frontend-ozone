@@ -21,12 +21,14 @@ const hasAvgBlockTime = config.UI.homepage.showAvgBlockTime;
 const rollupFeature = config.features.rollup;
 
 type ChainData = {
-  staked?: string
-  users?: string
-  initialSupply?: string
-  maxSupply?: string
-  errors?: string[]
-}
+  data?: {
+    staked: string;
+    users: string;
+    initialSupply: string;
+    maxSupply: string;
+  };
+  errors?: string[];
+};
 
 const Stats = () => {
   const [ hasGasTracker, setHasGasTracker ] = React.useState(config.features.gasTracker.isEnabled);
@@ -66,7 +68,7 @@ const Stats = () => {
   const fetch = useFetch()
   const [chainData, setChainData]: [ChainData, any] = React.useState<ChainData>({});
 
-  if (!chainData.errors && !chainData.staked) {
+  if (!chainData.errors && !chainData.data) {
     fetch('https://api.testnet.ozonescan.org/api/chain').then((data: any) => {
       setChainData(data);
     });
@@ -84,10 +86,10 @@ const Stats = () => {
   !hasGasTracker && itemsCount--;
   !hasAvgBlockTime && itemsCount--;
 
-  chainData.initialSupply && itemsCount++;
-  chainData.staked && itemsCount++;
-  chainData.users && itemsCount++;
-  chainData.maxSupply && itemsCount++;
+  chainData.data?.initialSupply && itemsCount++;
+  chainData.data?.staked && itemsCount++;
+  chainData.data?.users && itemsCount++;
+  chainData.data?.maxSupply && itemsCount++;
 
   if (data) {
     !data.gas_prices && itemsCount--;
@@ -189,38 +191,38 @@ const Stats = () => {
             isLoading={ isLoading }
           />
         ) }
-        { chainData.initialSupply && (
+        { chainData.data?.initialSupply && (
           <StatsItem
             icon="transactions"
             title="Initial Supply"
-            value={ `${chainData.initialSupply} ${chain.currency.symbol}` }
+            value={ `${chainData.data.initialSupply} ${chain.currency.symbol}` }
             _last={ isOdd ? lastItemTouchStyle : undefined }
             isLoading={ isLoading }
           />
         ) }
-        { chainData.initialSupply && (
+        { chainData.data?.initialSupply && (
           <StatsItem
             icon="transactions"
             title="Maximum Supply"
-            value={ `${chainData.maxSupply} ${chain.currency.symbol}` }
+            value={ `${chainData.data.maxSupply} ${chain.currency.symbol}` }
             _last={ isOdd ? lastItemTouchStyle : undefined }
             isLoading={ isLoading }
           />
         ) }
-        { chainData.users && (
+        { chainData.data?.users && (
           <StatsItem
             icon="wallet"
             title="Users"
-            value={ `${chainData.users}` }
+            value={ `${chainData.data.users}` }
             _last={ isOdd ? lastItemTouchStyle : undefined }
             isLoading={ isLoading }
           />
         ) }
-        { chainData.users && (
+        { chainData.data?.users && (
           <StatsItem
             icon="wallet"
             title="Total Staked"
-            value={ `${chainData.staked} ${chain.currency.symbol}` }
+            value={ `${chainData.data.staked} ${chain.currency.symbol}` }
             _last={ isOdd ? lastItemTouchStyle : undefined }
             isLoading={ isLoading }
           />
