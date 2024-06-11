@@ -67,7 +67,7 @@ const Stats = () => {
   const [chainData, setChainData]: [ChainData, any] = React.useState<ChainData>({});
 
   if (!chainData.errors && !chainData.staked) {
-    fetch('https://api.testnet.ozonescan.org/api/chain').then((data: ChainData) => {
+    fetch('https://api.testnet.ozonescan.org/api/chain').then((data: any) => {
       setChainData(data);
     });
   }
