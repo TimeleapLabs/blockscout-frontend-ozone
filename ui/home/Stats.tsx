@@ -198,7 +198,7 @@ const Stats = () => {
             title="Initial Supply"
             value={ `${chainData.data.initialSupply} ${chain.currency.symbol}` }
             _last={ isOdd ? lastItemTouchStyle : undefined }
-            isLoading={ isChainDataLoaded }
+            isLoading={ !isChainDataLoaded }
           />
         ) }
         { chainData.data?.initialSupply && (
@@ -207,7 +207,7 @@ const Stats = () => {
             title="Maximum Supply"
             value={ `${chainData.data.maxSupply} ${chain.currency.symbol}` }
             _last={ isOdd ? lastItemTouchStyle : undefined }
-            isLoading={ isChainDataLoaded }
+            isLoading={ !isChainDataLoaded }
           />
         ) }
         { chainData.data?.users && (
@@ -216,7 +216,7 @@ const Stats = () => {
             title="Users"
             value={ `${chainData.data.users}` }
             _last={ isOdd ? lastItemTouchStyle : undefined }
-            isLoading={ isChainDataLoaded }
+            isLoading={ !isChainDataLoaded }
           />
         ) }
         { chainData.data?.users && (
@@ -225,7 +225,7 @@ const Stats = () => {
             title="Total Staked"
             value={ `${chainData.data.staked} ${chain.currency.symbol}` }
             _last={ isOdd ? lastItemTouchStyle : undefined }
-            isLoading={ isChainDataLoaded }
+            isLoading={ !isChainDataLoaded }
           />
         ) }
       </>
