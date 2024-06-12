@@ -67,7 +67,7 @@ const Stats = () => {
 
   const fetch = useFetch()
   const [chainData, setChainData]: [ChainData, any] = React.useState<ChainData>({});
-  const isChainDataLoaded = chainData.errors || chainData.data;
+  const isChainDataLoaded = !!(chainData.errors || chainData.data);
 
   if (!isChainDataLoaded) {
     fetch("https://api.testnet.ozonescan.org/api/chain").then((data: any) => {
