@@ -67,9 +67,10 @@ const Stats = () => {
 
   const fetch = useFetch()
   const [chainData, setChainData]: [ChainData, any] = React.useState<ChainData>({});
+  const isChainDataLoaded = chainData.errors || chainData.data;
 
-  if (!chainData.errors && !chainData.data) {
-    fetch('https://api.testnet.ozonescan.org/api/chain').then((data: any) => {
+  if (!isChainDataLoaded) {
+    fetch("https://api.testnet.ozonescan.org/api/chain").then((data: any) => {
       setChainData(data);
     });
   }
@@ -193,20 +194,20 @@ const Stats = () => {
         ) }
         { chainData.data?.initialSupply && (
           <StatsItem
-            icon="transactions"
+            icon="token"
             title="Initial Supply"
             value={ `${chainData.data.initialSupply} ${chain.currency.symbol}` }
             _last={ isOdd ? lastItemTouchStyle : undefined }
-            isLoading={ isLoading }
+            isLoading={ isChainDataLoaded }
           />
         ) }
         { chainData.data?.initialSupply && (
           <StatsItem
-            icon="transactions"
+            icon="token"
             title="Maximum Supply"
             value={ `${chainData.data.maxSupply} ${chain.currency.symbol}` }
             _last={ isOdd ? lastItemTouchStyle : undefined }
-            isLoading={ isLoading }
+            isLoading={ isChainDataLoaded }
           />
         ) }
         { chainData.data?.users && (
@@ -215,16 +216,16 @@ const Stats = () => {
             title="Users"
             value={ `${chainData.data.users}` }
             _last={ isOdd ? lastItemTouchStyle : undefined }
-            isLoading={ isLoading }
+            isLoading={ isChainDataLoaded }
           />
         ) }
         { chainData.data?.users && (
           <StatsItem
-            icon="wallet"
+            icon="token"
             title="Total Staked"
             value={ `${chainData.data.staked} ${chain.currency.symbol}` }
             _last={ isOdd ? lastItemTouchStyle : undefined }
-            isLoading={ isLoading }
+            isLoading={ isChainDataLoaded }
           />
         ) }
       </>
@@ -233,7 +234,7 @@ const Stats = () => {
 
   return (
     <Grid
-      gridTemplateColumns={{ lg: `repeat(${ itemsCount }, 1fr)`, base: '1fr 1fr' }}
+      gridTemplateColumns={{ lg: `repeat(auto-fill, minmax(300px, 1fr))`, base: '1fr 1fr' }}
       gridTemplateRows={{ lg: 'none', base: undefined }}
       gridGap={{ base: 1, lg: 2 }}
       marginTop={ 3 }
