@@ -1,5 +1,5 @@
-import * as descriptors from './policies';
-import { makePolicyString, mergeDescriptors } from './utils';
+import * as descriptors from "./policies";
+import { makePolicyString, mergeDescriptors } from "./utils";
 
 function generateCspPolicy() {
   const policyDescriptor = mergeDescriptors(
@@ -15,6 +15,7 @@ function generateCspPolicy() {
     descriptors.safe(),
     descriptors.sentry(),
     descriptors.walletConnect(),
+    descriptors.ozone()
   );
 
   return makePolicyString(policyDescriptor);
