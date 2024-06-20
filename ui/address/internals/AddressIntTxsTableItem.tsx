@@ -21,18 +21,10 @@ type Props = InternalTransaction & {
 
 // TODO: Move these to a config file
 
-const EVM_WRITER_ADDRESS = "0xd100ec0000000000000000000000000000000000";
-const NATIVE_MINTER_ADDRESS = "0x6d696e7400000000000000000000000000000000";
+const NATIVE_MINTER_ADDRESS = "0x62d9b73C79365cff0C21ac58428a42D20E274e64";
 
-const getTypeTitle = (
-  from: AddressParam,
-  to: AddressParam | null,
-  type: string
-) => {
-  if (
-    from.hash.toLowerCase() === NATIVE_MINTER_ADDRESS &&
-    to?.hash.toLowerCase() === EVM_WRITER_ADDRESS
-  ) {
+const getTypeTitle = (from: AddressParam, type: string) => {
+  if (from.hash.toLowerCase() === NATIVE_MINTER_ADDRESS) {
     return "Mining";
   }
   return TX_INTERNALS_ITEMS.find(({ id }) => id === type)?.title;
@@ -52,7 +44,7 @@ const AddressIntTxsTableItem = ({
   currentAddress,
   isLoading,
 }: Props) => {
-  const typeTitle = getTypeTitle(from, to, type);
+  const typeTitle = getTypeTitle(from, type);
   const toData = to ? to : createdContract;
 
   const timeAgo = useTimeAgoIncrement(timestamp, true);
