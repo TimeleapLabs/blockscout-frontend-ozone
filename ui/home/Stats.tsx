@@ -26,6 +26,7 @@ type ChainData = {
     users: string;
     initialSupply: string;
     maxSupply: string;
+    totalSupply: string;
   };
   errors?: string[];
 };
@@ -91,6 +92,7 @@ const Stats = () => {
   chainData.data?.staked && itemsCount++;
   chainData.data?.users && itemsCount++;
   chainData.data?.maxSupply && itemsCount++;
+  chainData.data?.totalSupply && itemsCount++;
 
   if (data) {
     !data.gas_prices && itemsCount--;
@@ -206,6 +208,15 @@ const Stats = () => {
             icon="token"
             title="Maximum Supply"
             value={ `${chainData.data.maxSupply} ${chain.currency.symbol}` }
+            _last={ isOdd ? lastItemTouchStyle : undefined }
+            isLoading={ !isChainDataLoaded }
+          />
+        ) }
+        { chainData.data?.initialSupply && (
+          <StatsItem
+            icon="token"
+            title="Current Supply"
+            value={ `${chainData.data.totalSupply} ${chain.currency.symbol}` }
             _last={ isOdd ? lastItemTouchStyle : undefined }
             isLoading={ !isChainDataLoaded }
           />
