@@ -17,7 +17,7 @@ type Props = InternalTransaction & {
 
 // TODO: Move these to a config file
 
-const NATIVE_MINTER_ADDRESS = "0x62d9b73C79365cff0C21ac58428a42D20E274e64";
+const NATIVE_MINTER_ADDRESS = "0x43C6b0a2D6a5cb0cFC4E0FB0D44dEc69151dBF9d";
 
 const getTypeTitle = (from: AddressParam, type: string) => {
   if (from.hash.toLowerCase() === NATIVE_MINTER_ADDRESS) {
