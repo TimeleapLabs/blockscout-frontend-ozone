@@ -575,6 +575,7 @@ const schema = yup
       .oneOf(["validation", "mining"]),
     NEXT_PUBLIC_NETWORK_TOKEN_STANDARD_NAME: yup.string(),
     NEXT_PUBLIC_NETWORK_STAKE_MANAGER_ADDRESS: yup.string(),
+    NEXT_PUBLIC_OZONE_API_URL: yup.string(),
     NEXT_PUBLIC_IS_TESTNET: yup.boolean(),
 
     // 3. API configuration

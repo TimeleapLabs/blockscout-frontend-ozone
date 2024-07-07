@@ -25,6 +25,7 @@ const chain = Object.freeze({
     getEnvValue("NEXT_PUBLIC_NETWORK_VERIFICATION_TYPE") || "mining",
   stakeManagerAddress:
     getEnvValue("NEXT_PUBLIC_NETWORK_STAKE_MANAGER_ADDRESS") || "0x",
+  ozoneApiUrl: getEnvValue("NEXT_PUBLIC_OZONE_API_URL") || "",
 });
 
 export default chain;

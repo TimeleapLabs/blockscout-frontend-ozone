@@ -92,6 +92,7 @@ _Note!_ The `NEXT_PUBLIC_NETWORK_CURRENCY` variables represent the blockchain's 
 | NEXT_PUBLIC_NETWORK_VERIFICATION_TYPE     | `validation` or `mining` | Verification type in the network                                                                  | -              | `mining`      | `validation`               |
 | NEXT_PUBLIC_NETWORK_TOKEN_STANDARD_NAME   | `string`                 | Name of the standard for creating tokens                                                          | -              | `ERC`         | `BEP`                      |
 | NEXT_PUBLIC_NETWORK_STAKE_MANAGER_ADDRESS | `string`                 | Stake Manager contract address                                                                    | -              | `0x`          | `0x`                       |
+| NEXT_PUBLIC_OZONE_API_URL                 | `string`                 | Ozone API URL                                                                                     | -              | -             | -                          |
 | NEXT_PUBLIC_IS_TESTNET                    | `boolean`                | Set to true if network is testnet                                                                 | -              | `false`       | `true`                     |
 
 &nbsp;

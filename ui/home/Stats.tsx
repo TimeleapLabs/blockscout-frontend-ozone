@@ -70,7 +70,7 @@ const Stats = () => {
   const isChainDataLoaded = !!(chainData.errors || chainData.data);
 
   if (!isChainDataLoaded) {
-    fetch("https://api.testnet.ozonescan.org/api/chain").then((data: any) => {
+    fetch(chain.ozoneApiUrl).then((data: any) => {
       setChainData(data);
     });
   }
